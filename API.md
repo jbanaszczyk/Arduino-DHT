@@ -1,5 +1,12 @@
 
-# Functions
+# Warning
+
+dht API is a subject of change
+
+Nothing below can not be assumed as valid
+
+
+## Functions
 
 _**`void setup(uint8_t pin, DHT_MODEL_t model=AUTO_DETECT);`**_    
 - Call to initialize the interface, define the GPIO pin to which the sensor is connected and define the sensor type. Valid sensor types are:     

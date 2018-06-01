@@ -27,6 +27,6 @@ void loop() {
 	Serial.println();
 }
 
-// inital release
+// initial release
 // Program size : 6 286 bytes(used 19 % of a 32 256 byte maximum) (0.44 secs)
 // Minimum Memory Usage : 329 bytes(16 % of a 2048 byte maximum)
