@@ -1,0 +1,15 @@
+{
+  "name": "dht sensor library for Arduino",
+  "keywords": "onewire, 1-wire, bus, sensor, temperature", humidity
+  "description": "Arduino ESP library for DHT11, DHT22, etc Temp & Humidity Sensors",
+  "repository":
+  {
+    "type": "git",
+    "url": "https://github.com/jbanaszczyk/pms5003"
+  },
+  "version": "2.0",
+  "frameworks": "arduino",
+  "platforms": "*",
+  "license": "BSD 3-clause",
+  "homepage": "https://github.com/jbanaszczyk/pms5003"
+}
