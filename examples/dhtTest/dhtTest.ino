@@ -14,8 +14,8 @@ void setup() {
 void loop() {
 	delay(dht.getMinimumSamplingPeriod());
 
-	float humidity = dht.getHumidity();
-	float temperature = dht.getTemperature();
+	const float humidity = dht.getHumidity();
+	const float temperature = dht.getTemperature();
 
 	Serial.print(dht.getStatusString());
 	Serial.print("\t");

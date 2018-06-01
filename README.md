@@ -1,149 +1,82 @@
-DHTesp
-===
+[![download](https://img.shields.io/badge/current-download-brightgreen.svg)](https://github.com/jbanaszczyk/dht/archive/master.zip)
+[![Version](https://img.shields.io/badge/release-2.0-brightgreen.svg)](https://github.com/jbanaszczyk/dht/releases)
+[![status](https://img.shields.io/badge/status-alpha-red.svg)](https://github.com/jbanaszczyk/dht/releases)
+[![Platform](https://img.shields.io/badge/platform-arduino-blue.svg)](https://www.arduino.cc/)
+[![Language](https://img.shields.io/badge/language-C++-blue.svg)](https://isocpp.org/)
+[![Standard](https://img.shields.io/badge/c%2B%2B-11/14-blue.svg)](https://en.wikipedia.org/wiki/C%2B%2B#Standardization)
+[![License](https://img.shields.io/badge/license-BSD-blue.svg)](https://github.com/jbanaszczyk/dht/blob/master/LICENSE)
 
-An Arduino library for reading the DHT family of temperature and humidity sensors.    
-Forked from [arduino-DHT](https://github.com/markruys/arduino-DHT)     
-Original written by Mark Ruys, <mark@paracas.nl>.    
 
-Why did I clone this library instead of forking the original repo and push the changes?
-When I searched through Github for DHT libraries, I found a lot of them, some of them offers additional functions, some of them only basic temperature and humidity values. I wanted to combine all interesting functions into one library. In addition, none of the DHT libraries I found were written to work without errors on the ESP32. For ESP32 (a multi core/ multi processing SOC) task switching must be disabled while reading data from the sensor.    
-Another problem I found is that many of the available libraries use the same naming (dht.h, dht.cpp), which easily leads to conflicts if different libraries are used for different platforms.    
+# Yet another DHT library
 
-The library is tested as well on ESP8266 and should work on AVR boards as well.    
+An Arduino library for reading the DHT family of temperature and humidity sensors.
 
-Changes to the original library:
---------
-- 2017-12-12: Renamed DHT class to DHTesp and filenames from dht.* to DHTesp.* to avoid conflicts with other libraries - beegee-tokyo, <beegee@giesecke.tk>.    
-- 2017-12-12: Updated to work with ESP32 - beegee-tokyo, <beegee@giesecke.tk>.   
-- 2017-12-12: Added function computeHeatIndex. Reference: [Adafruit DHT library](https://github.com/adafruit/DHT-sensor-library).    
-- 2017-12-14: Added function computeDewPoint. Reference: [idDHTLib](https://github.com/niesteszeck/idDHTLib).    
-- 2017-12-14: Added function getComfortRatio. Reference: [libDHT](https://github.com/ADiea/libDHT). (References about Human Comfort invalid)    
-- 2017-12-15: Added function computePerception. Reference: [WikiPedia Dew point==> Relationship to human comfort](https://en.wikipedia.org/wiki/Dew_point) - beegee-tokyo, <beegee@giesecke.tk>.   
-- 2018-01-02: Added example for multiple sensors usage.    
-- 2018-01-03: Added function getTempAndHumidity which returns temperature and humidity in one call.    
-- 2018-01-03: Added retry in case the reading from the sensor fails with a timeout.    
-- 2018-01-08: Added ESP8266 (and probably AVR) compatibility.    
-- 2018-03-11: Updated DHT example    
-Features
---------
-  - Support for DHT11 and DHT22, AM2302, RHT03
-  - Auto detect sensor model
-  - Determine heat index
-  - Determine dewpoint
-  - Determine thermal comfort:
-    * Empiric comfort function based on comfort profiles(parametric lines)
-    * Multiple comfort profiles possible. Default based on http://epb.apogee.net/res/refcomf.asp  (References invalid)
-    * Determine if it's too cold, hot, humid, dry, based on current comfort profile
-    * More info at [Determining Thermal Comfort Using a Humidity and Temperature Sensor](https://www.azosensors.com/article.aspx?ArticleID=487)
-  - Determine human perception based on humidity, temperature and dew point according to Horstmeyer, Steve (2006-08-15). [Relative Humidity....Relative to What? The Dew Point Temperature...a better approach](http://www.shorstmeyer.com/wxfaqs/humidity/humidity.html)
+## License
 
-Functions
------
-_**`void setup(uint8_t pin, DHT_MODEL_t model=AUTO_DETECT);`**_    
-- Call to initialize the interface, define the GPIO pin to which the sensor is connected and define the sensor type. Valid sensor types are:     
-    - AUTO_DETECT     Try to detect which sensor is connected    
-    - DHT11    
-    - DHT22    
-    - AM2302          Packaged DHT22    
-    - RHT03           Equivalent to DHT22    
+dht library is distributed under [BSD 3-Clause "New" License](https://github.com/jbanaszczyk/dht/blob/master/LICENSE)
 
-_**`void resetTimer();`**_    
-- Reset last time the sensor was read    
+## Status
 
-_**`float getTemperature();`**_    
-- Get the temperature in degree Centigrade from the sensor    
-Either one of  _`getTemperature()`_ or  _`getHumidity()`_ or  _`getTempAndHumidity()`_ initiates reading a value from the sensor if the last reading was older than the minimal refresh time of the sensor.    
-See example _`DHT_ESP32.ino`_ or _`DHT_Test.ino`_    
+### Current revision: 2.0
 
-_**`float getHumidity();`**_    
-- Get the humidity from the sensor     
-Either one of  _`getTemperature()`_ or  _`getHumidity()`_ or  _`getTempAndHumidity()`_ initiates reading a value from the sensor if the last reading was older than the minimal refresh time of the sensor.    
-See example _`DHT_ESP32.ino`_ or _`DHT_Test.ino`_    
+Status of current revision is: "development started"
 
-_**`TempAndHumidity getTempAndHumidity();`**_    
-- Get the temperature and humidity from the sensor     
-Either one of _`getTemperature()`_ or  _`getHumidity()`_ or  _`getTempAndHumidity()`_ initiates reading a value from the sensor if the last reading was older than the minimal refresh time of the sensor.    
-Return value is a struct of type _`TempAndHumidity`_ with temperature and humidity as float values.
-See example _`DHT_Multi.ino`_    
+## Platforms
 
-_**`DHT_ERROR_t getStatus();`**_    
-- Get last error if reading from the sensor failed. Possible values are:    
-  - ERROR_NONE      no error occured
-  - ERROR_TIMEOUT   timeout reading from the sensor    
-  - ERROR_CHECKSUM  checksum of received values doesn't match
+The library is tested as well on Arduino-Uno
 
-_**`const char* getStatusString();`**_    
-- Get last error as a char *    
+## Features
 
-_**`DHT_MODEL_t getModel()`**_    
-- Get detected (or defined) sensor type    
+- Support for DHT11 and DHT22, AM2302, RHT03
+- Auto detect sensor model
+- Determine heat index
+- Determine dewpoint
+- Determine thermal comfort:
+  * Empiric comfort function based on comfort profiles (parametric lines)
+  * Multiple comfort profiles possible
+  * Determine if it's too cold, hot, humid, dry, based on current comfort profile
+- Determine human perception based on humidity, temperature and dew point 
 
-_**`int getMinimumSamplingPeriod();`**_    
-- Get minimmum possible sampling period. For DHT11 this is 1000ms, for other sensors it is 2000ms    
+## API
 
-_**`int8_t getNumberOfDecimalsTemperature();`**_    
-- Get number of decimals in the temperature value. For DHT11 this is 0, for other sensors it is 1    
+[dht API description](API.md) is available as a separate document.
 
-_**`int8_t getLowerBoundTemperature();`**_    
-- Get lower temperature range of the sensor. For DHT11 this is 0 degree Centigrade, for other sensors this is -40 degree Centrigrade    
+## References
 
-_**`int8_t getUpperBoundTemperature();`**_    
-- Get upper temperature range of the sensor. For DHT11 this is 50 degree Centigrade, for other sensors this is 125 degree Centrigrade    
+* [Determining Thermal Comfort Using a Humidity and Temperature Sensor](https://www.azosensors.com/article.aspx?ArticleID=487)
+* [Relative Humidity....Relative to What? The Dew Point Temperature...a better approach, Horstmeyer, Steve (2006-08-15)](http://www.shorstmeyer.com/wxfaqs/humidity/humidity.html)
 
-_**`int8_t getNumberOfDecimalsHumidity();`**_    
-- Get number of decimals in the humidity value. This is always 0.    
+## Contributors
 
-_**`int8_t getLowerBoundHumidity();`**_    
-- Get lower humidity range of the sensor. For DHT11 this is 20 percent, for other sensors this is 0 percent    
+Original written by Mark Ruys
 
-_**`int8_t getUpperBoundHumidity();`**_    
-- Get upper temperature range of the sensor. For DHT11 this is 90 percent, for other sensors this is 100 percent    
+Forked from [beegee-tokyo/DHTesp](https://github.com/beegee-tokyo/DHTesp)
 
-_**`static float toFahrenheit(float fromCelcius);`**_    
-- Convert Centrigrade value to Fahrenheit value    
+Added code and ideas from many developers:
+- [Mark Ruys](https://github.com/markruys/arduino-DHT)
+- [Bernd Giesecke](https://github.com/beegee-tokyo/DHTesp)
+- [Rob Tillaart](https://github.com/RobTillaart/libDHT)
+- [github/ADiea](https://github.com/ADiea/libDHT)
+- ...
 
-_**`static float toCelsius(float fromFahrenheit) { return (fromFahrenheit - 32.0) / 1.8; };`**_    
-- Convert Fahrenheit value to Centigrade value    
 
-_**`float computeHeatIndex(float temperature, float percentHumidity, bool isFahrenheit=false);`**_    
-- Compute the heat index. Default temperature is in Centrigrade.    
+## Preparation
 
-_**`float computeDewPoint(float temperature, float percentHumidity, bool isFahrenheit=false);`**_    
-- Compute the dew point. Default temperature is in Centrigrade.    
+### IDE & OS
 
-_**`float getComfortRatio(ComfortState& destComfStatus, float temperature, float percentHumidity, bool isFahrenheit=false);`**_    
-- Compute the comfort ratio. Default temperature is in Centrigrade. Return values:    
-0 -> OK    
-1 -> Too Hot    
-2 -> Too cold    
-4 -> Too dry    
-8 -> Too humid    
-9 -> Hot and humid    
-5 -> Hot and dry    
-10 -> Cold and humid    
-6 -> Cold and dry    
+dht library is developed using:
+* Visual Studio Community 2017 (Windows)
+* [Arduino IDE for Visual Studio](http://www.visualmicro.com)
 
-_**`byte computePerception(float temperature, float percentHumidity, bool isFahrenheit=false);`**_    
-- Compute the human perception. Default temperature is in Centrigrade. Return values:    
-0 -> Dry    
-1 -> Very comfortable    
-2 -> Comfortable    
-3 -> Ok    
-4 -> Uncomfortable    
-5 -> Quite uncomfortable    
-6 -> Very uncomfortable    
-7 -> Severe uncomfortable    
+dht library was successfully checked using:
+* Arduino 1.8.5 (Windows)
 
-Usage
------
-See [examples](https://github.com/beegee-tokyo/DHTesp/blob/master/examples). For all the options, see [dhtesp.h](https://github.com/beegee-tokyo/DHTesp/blob/master/DHTesp.h).    
+### Dependencies
 
-Installation
-------------
+dht library does not depend on additional libraries.
 
-In Arduino IDE open Sketch->Include Library->Manage Libraries then search for _**DHT ESP**_    
-In PlatformIO open PlatformIO Home, switch to libraries and search for _**DHT ESP32**_. Or install the library in the terminal with _**`platformio lib install 2029`**_    
+# Applications
 
-For manual installation [download](https://github.com/beegee-tokyo/DHTesp/archive/master.zip) the archive, unzip it and place the DHTesp folder into the library directory.    
-In Arduino IDE this is usually _**`<arduinosketchfolder>/libraries/`**_    
-In PlatformIO this is usually _**`<user/.platformio/lib>`**_    
+## Hello. The Basic scenario.<a name="dhtTest"></a>
+
+Use the code:  [Examples\dhtTest\dhtTest.ino](https://github.com/jbanaszczyk/dht/blob/master/Examples/dhtTest/dhtTest.ino)
