@@ -1,11 +1,7 @@
 #ifndef _45E0222197934BD98C87BA94BB7E9CB3_
 #define _45E0222197934BD98C87BA94BB7E9CB3_
 
-#if ARDUINO < 100
-#include <WProgram.h>
-#else
 #include <Arduino.h>
-#endif
 
 // Reference: http://epb.apogee.net/res/refcomf.asp (References invalid)
 enum ComfortState {
@@ -123,8 +119,6 @@ public:
 		DHTesp::lastReadTime = millis() - 3000;
 	}
 
-
-
 	float getTemperature() {
 		readSensor();
 		if (error == ERROR_TIMEOUT) { // Try a second time to read
@@ -200,11 +194,6 @@ public:
 
 #endif
 
-
-
-
-
-
 DHT_MODEL_t getModel() { return model; }
 
 int getMinimumSamplingPeriod() { return model == DHT11 ? 1000 : 2000; }
@@ -253,7 +242,6 @@ float computeHeatIndex(float temperature, float percentHumidity, bool isFahrenhe
 	return isFahrenheit ? hi : toCelsius(hi);
 }
 
-
 //boolean isFahrenheit: True == Fahrenheit; False == Celcius
 float computeDewPoint(float temperature, float percentHumidity, bool isFahrenheit = false) {
 	// reference: http://wahiduddin.net/calc/density_algorithms.htm
@@ -272,11 +260,7 @@ float computeDewPoint(float temperature, float percentHumidity, bool isFahrenhei
 	return isFahrenheit ? toFahrenheit(Td) : Td;
 }
 
-
-
-
-float DHTesp::getComfortRatio(ComfortState& destComfortStatus, float temperature, float percentHumidity, bool isFahrenheit = false)
-{
+float DHTesp::getComfortRatio(ComfortState& destComfortStatus, float temperature, float percentHumidity, bool isFahrenheit = false) {
 	float ratio = 100; //100%
 	float distance = 0;
 	float kTempFactor = 3; //take into account the slope of the lines
@@ -333,9 +317,6 @@ float DHTesp::getComfortRatio(ComfortState& destComfortStatus, float temperature
 	return ratio;
 }
 
-
-
-
 ComfortProfile getComfortProfile() { return m_comfort; }
 void setComfortProfile(ComfortProfile& c) { m_comfort = c; }
 inline bool isTooHot(float temp, float humidity) { return m_comfort.isTooHot(temp, humidity); }
@@ -384,13 +365,10 @@ byte computePerception(float temperature, float percentHumidity, bool isFahrenhe
 	}
 	else if (dewPoint < 26.0f) {
 		return Perception_VeryUnComfy;
-}
+	}
 	// else dew >= 26.0
 	return Perception_SevereUncomfy;
-	}
-
-
-
+}
 
 protected:
 	void readSensor() {
@@ -518,4 +496,4 @@ private:
 	ComfortProfile m_comfort;
 };
 
-#endif /*dhtesp_h*/
+#endif 
