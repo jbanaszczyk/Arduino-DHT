@@ -1,7 +1,11 @@
-#ifndef _E07E7782_A6AF_4263_BA48_A71B75EA3070_
-#define _E07E7782_A6AF_4263_BA48_A71B75EA3070_
+#ifndef _45E0222197934BD98C87BA94BB7E9CB3_
+#define _45E0222197934BD98C87BA94BB7E9CB3_
 
+#if ARDUINO < 100
+#include <WProgram.h>
+#else
 #include <Arduino.h>
+#endif
 
 // Reference: http://epb.apogee.net/res/refcomf.asp (References invalid)
 enum ComfortState {
@@ -53,7 +57,8 @@ struct ComfortProfile
 	inline float distanceTooDry(float temp, float humidity) { return (humidity * m_tooDry_m + m_tooDry_b) - temp; }
 };
 
-class DHTesp {
+class DHTesp
+{
 public:
 
 	typedef enum {
@@ -119,6 +124,7 @@ public:
 	}
 
 
+
 	float getTemperature() {
 		readSensor();
 		if (error == ERROR_TIMEOUT) { // Try a second time to read
@@ -148,7 +154,7 @@ public:
 
 	DHT_ERROR_t getStatus() { return error; };
 
-
+#ifndef OPTIMIZE_SRAM_SIZE
 
 	const char* getStatusString()
 	{
@@ -164,7 +170,7 @@ public:
 		}
 	}
 
-#ifdef OPTIMIZE_SRAM_SIZE
+#else
 
 	// At the expense of 26 bytes of extra PROGMEM, we save 11 bytes of
 	// SRAM by using the following method:
@@ -173,24 +179,24 @@ public:
 	prog_char P_TIMEOUT[]  PROGMEM = "TIMEOUT";
 	prog_char P_CHECKSUM[] PROGMEM = "CHECKSUM";
 
-	const char *DHTesp::getStatusString() {
-		prog_char *c;
-		switch (error) {
-		case DHTesp::ERROR_CHECKSUM:
-			c = P_CHECKSUM; break;
+	const char* getStatusString() {}
+	prog_char *c;
+	switch (error) {
+	case DHTesp::ERROR_CHECKSUM:
+		c = P_CHECKSUM; break;
 
-		case DHTesp::ERROR_TIMEOUT:
-			c = P_TIMEOUT; break;
+	case DHTesp::ERROR_TIMEOUT:
+		c = P_TIMEOUT; break;
 
-		default:
-			c = P_OK; break;
-		}
-
-		static char buffer[9];
-		strcpy_P(buffer, c);
-
-		return buffer;
+	default:
+		c = P_OK; break;
 	}
+
+	static char buffer[9];
+	strcpy_P(buffer, c);
+
+	return buffer;
+}
 
 #endif
 
@@ -199,195 +205,189 @@ public:
 
 
 
+DHT_MODEL_t getModel() { return model; }
 
-	DHT_MODEL_t getModel() { return model; }
+int getMinimumSamplingPeriod() { return model == DHT11 ? 1000 : 2000; }
 
-	int getMinimumSamplingPeriod() { return model == DHT11 ? 1000 : 2000; }
+int8_t getNumberOfDecimalsTemperature() { return model == DHT11 ? 0 : 1; };
+int8_t getLowerBoundTemperature() { return model == DHT11 ? 0 : -40; };
+int8_t getUpperBoundTemperature() { return model == DHT11 ? 50 : 125; };
 
-	int8_t getNumberOfDecimalsTemperature() { return model == DHT11 ? 0 : 1; };
-	int8_t getLowerBoundTemperature() { return model == DHT11 ? 0 : -40; };
-	int8_t getUpperBoundTemperature() { return model == DHT11 ? 50 : 125; };
+int8_t getNumberOfDecimalsHumidity() { return 0; };
+int8_t getLowerBoundHumidity() { return model == DHT11 ? 20 : 0; };
+int8_t getUpperBoundHumidity() { return model == DHT11 ? 90 : 100; };
 
-	int8_t getNumberOfDecimalsHumidity() { return 0; };
-	int8_t getLowerBoundHumidity() { return model == DHT11 ? 20 : 0; };
-	int8_t getUpperBoundHumidity() { return model == DHT11 ? 90 : 100; };
+static float toFahrenheit(float fromCelcius) { return 1.8 * fromCelcius + 32.0; };
+static float toCelsius(float fromFahrenheit) { return (fromFahrenheit - 32.0) / 1.8; };
 
-	static float toFahrenheit(float fromCelcius) { return 1.8 * fromCelcius + 32.0; };
-	static float toCelsius(float fromFahrenheit) { return (fromFahrenheit - 32.0) / 1.8; };
+//boolean isFahrenheit: True == Fahrenheit; False == Celcius
+float computeHeatIndex(float temperature, float percentHumidity, bool isFahrenheit = false) {
+	// Using both Rothfusz and Steadman's equations
+	// http://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
+	float hi;
 
-	//boolean isFahrenheit: True == Fahrenheit; False == Celsius
-	float computeHeatIndex(float temperature, float percentHumidity, bool isFahrenheit = false) {
-		// Using both Rothfusz and Steadman's equations
-		// http://www.wpc.ncep.noaa.gov/html/heatindex_equation.shtml
-		float hi;
-
-		if (!isFahrenheit) {
-			temperature = toFahrenheit(temperature);
-		}
-
-		hi = 0.5 * (temperature + 61.0 + ((temperature - 68.0) * 1.2) + (percentHumidity * 0.094));
-
-		if (hi > 79) {
-			hi = -42.379 +
-				2.04901523 * temperature +
-				10.14333127 * percentHumidity +
-				-0.22475541 * temperature*percentHumidity +
-				-0.00683783 * pow(temperature, 2) +
-				-0.05481717 * pow(percentHumidity, 2) +
-				0.00122874 * pow(temperature, 2) * percentHumidity +
-				0.00085282 * temperature*pow(percentHumidity, 2) +
-				-0.00000199 * pow(temperature, 2) * pow(percentHumidity, 2);
-
-			if ((percentHumidity < 13) && (temperature >= 80.0) && (temperature <= 112.0))
-				hi -= ((13.0 - percentHumidity) * 0.25) * sqrt((17.0 - abs(temperature - 95.0)) * 0.05882);
-
-			else if ((percentHumidity > 85.0) && (temperature >= 80.0) && (temperature <= 87.0))
-				hi += ((percentHumidity - 85.0) * 0.1) * ((87.0 - temperature) * 0.2);
-		}
-
-		return isFahrenheit ? hi : toCelsius(hi);
+	if (!isFahrenheit) {
+		temperature = toFahrenheit(temperature);
 	}
 
+	hi = 0.5 * (temperature + 61.0 + ((temperature - 68.0) * 1.2) + (percentHumidity * 0.094));
 
-	//boolean isFahrenheit: True == Fahrenheit; False == Celsius
-	float computeDewPoint(float temperature, float percentHumidity, bool isFahrenheit = false) {
-		// reference: http://wahiduddin.net/calc/density_algorithms.htm
-		if (isFahrenheit) {
-			temperature = toCelsius(temperature);
-		}
-		double A0 = 373.15 / (273.15 + (double)temperature);
-		double SUM = -7.90298 * (A0 - 1);
-		SUM += 5.02808 * log10(A0);
-		SUM += -1.3816e-7 * (pow(10, (11.344 * (1 - 1 / A0))) - 1);
-		SUM += 8.1328e-3 * (pow(10, (-3.49149 * (A0 - 1))) - 1);
-		SUM += log10(1013.246);
-		double VP = pow(10, SUM - 3) * (double)percentHumidity;
-		double Td = log(VP / 0.61078); // temp var
-		Td = (241.88 * Td) / (17.558 - Td);
-		return isFahrenheit ? toFahrenheit(Td) : Td;
+	if (hi > 79) {
+		hi = -42.379 +
+			2.04901523 * temperature +
+			10.14333127 * percentHumidity +
+			-0.22475541 * temperature*percentHumidity +
+			-0.00683783 * pow(temperature, 2) +
+			-0.05481717 * pow(percentHumidity, 2) +
+			0.00122874 * pow(temperature, 2) * percentHumidity +
+			0.00085282 * temperature*pow(percentHumidity, 2) +
+			-0.00000199 * pow(temperature, 2) * pow(percentHumidity, 2);
+
+		if ((percentHumidity < 13) && (temperature >= 80.0) && (temperature <= 112.0))
+			hi -= ((13.0 - percentHumidity) * 0.25) * sqrt((17.0 - abs(temperature - 95.0)) * 0.05882);
+
+		else if ((percentHumidity > 85.0) && (temperature >= 80.0) && (temperature <= 87.0))
+			hi += ((percentHumidity - 85.0) * 0.1) * ((87.0 - temperature) * 0.2);
 	}
 
+	return isFahrenheit ? hi : toCelsius(hi);
+}
 
 
-	//boolean isFahrenheit: True == Fahrenheit; False == Celsius
-	float getComfortRatio(ComfortState& destComfortStatus, float temperature, float percentHumidity, bool isFahrenheit = false) {
-		float ratio = 100; //100%
-		float distance = 0;
-		float kTempFactor = 3; //take into account the slope of the lines
-		float kHumidFactor = 0.1; //take into account the slope of the lines
-		uint8_t tempComfort = 0;
+//boolean isFahrenheit: True == Fahrenheit; False == Celcius
+float computeDewPoint(float temperature, float percentHumidity, bool isFahrenheit = false) {
+	// reference: http://wahiduddin.net/calc/density_algorithms.htm
+	if (isFahrenheit) {
+		temperature = toCelsius(temperature);
+	}
+	double A0 = 373.15 / (273.15 + (double)temperature);
+	double SUM = -7.90298 * (A0 - 1);
+	SUM += 5.02808 * log10(A0);
+	SUM += -1.3816e-7 * (pow(10, (11.344 * (1 - 1 / A0))) - 1);
+	SUM += 8.1328e-3 * (pow(10, (-3.49149 * (A0 - 1))) - 1);
+	SUM += log10(1013.246);
+	double VP = pow(10, SUM - 3) * (double)percentHumidity;
+	double Td = log(VP / 0.61078); // temp var
+	Td = (241.88 * Td) / (17.558 - Td);
+	return isFahrenheit ? toFahrenheit(Td) : Td;
+}
 
-		if (isFahrenheit) {
-			temperature = toCelsius(temperature);
-		}
 
-		destComfortStatus = Comfort_OK;
 
-		distance = m_comfort.distanceTooHot(temperature, percentHumidity);
-		if (distance > 0)
-		{
-			//update the comfort descriptor
-			tempComfort += (uint8_t)Comfort_TooHot;
-			//decrease the comfot ratio taking the distance into account
-			ratio -= distance * kTempFactor;
-		}
 
-		distance = m_comfort.distanceTooHumid(temperature, percentHumidity);
-		if (distance > 0)
-		{
-			//update the comfort descriptor
-			tempComfort += (uint8_t)Comfort_TooHumid;
-			//decrease the comfot ratio taking the distance into account
-			ratio -= distance * kHumidFactor;
-		}
+float DHTesp::getComfortRatio(ComfortState& destComfortStatus, float temperature, float percentHumidity, bool isFahrenheit = false)
+{
+	float ratio = 100; //100%
+	float distance = 0;
+	float kTempFactor = 3; //take into account the slope of the lines
+	float kHumidFactor = 0.1; //take into account the slope of the lines
+	uint8_t tempComfort = 0;
 
-		distance = m_comfort.distanceTooCold(temperature, percentHumidity);
-		if (distance > 0)
-		{
-			//update the comfort descriptor
-			tempComfort += (uint8_t)Comfort_TooCold;
-			//decrease the comfot ratio taking the distance into account
-			ratio -= distance * kTempFactor;
-		}
-
-		distance = m_comfort.distanceTooDry(temperature, percentHumidity);
-		if (distance > 0)
-		{
-			//update the comfort descriptor
-			tempComfort += (uint8_t)Comfort_TooDry;
-			//decrease the comfot ratio taking the distance into account
-			ratio -= distance * kHumidFactor;
-		}
-
-		destComfortStatus = (ComfortState)tempComfort;
-
-		if (ratio < 0)
-			ratio = 0;
-
-		return ratio;
+	if (isFahrenheit) {
+		temperature = toCelsius(temperature);
 	}
 
+	destComfortStatus = Comfort_OK;
 
-
-
-
-
-
-
-	ComfortProfile getComfortProfile() { return m_comfort; }
-	void setComfortProfile(ComfortProfile& c) { m_comfort = c; }
-	inline bool isTooHot(float temp, float humidity) { return m_comfort.isTooHot(temp, humidity); }
-	inline bool isTooHumid(float temp, float humidity) { return m_comfort.isTooHumid(temp, humidity); }
-	inline bool isTooCold(float temp, float humidity) { return m_comfort.isTooCold(temp, humidity); }
-	inline bool isTooDry(float temp, float humidity) { return m_comfort.isTooDry(temp, humidity); }
-
-
-	//boolean isFahrenheit: True == Fahrenheit; False == Celsius
-	byte computePerception(float temperature, float percentHumidity, bool isFahrenheit = false) {
-		// Computing human perception from dew point
-		// reference: https://en.wikipedia.org/wiki/Dew_point ==> Relationship to human comfort
-		// reference: Horstmeyer, Steve (2006-08-15). "Relative Humidity....Relative to What? The Dew Point Temperature...a better approach". Steve Horstmeyer, Meteorologist, WKRC TV, Cincinnati, Ohio, USA. Retrieved 2009-08-20.
-		// Using table
-		// Return value Dew point    Human perception[6]
-		//    7         Over 26 °C   Severely high, even deadly for asthma related illnesses
-		//    6         24–26 °C     Extremely uncomfortable, oppressive
-		//    5         21–24 °C     Very humid, quite uncomfortable
-		//    4         18–21 °C     Somewhat uncomfortable for most people at upper edge
-		//    3         16–18 °C     OK for most, but all perceive the humidity at upper edge
-		//    2         13–16 °C     Comfortable
-		//    1         10–12 °C     Very comfortable
-		//    0         Under 10 °C  A bit dry for some
-
-		if (isFahrenheit) {
-			temperature = toCelsius(temperature);
-		}
-		float dewPoint = computeDewPoint(temperature, percentHumidity);
-
-		if (dewPoint < 10.0f) {
-			return Perception_Dry;
-		}
-		else if (dewPoint < 13.0f) {
-			return Perception_VeryComfy;
-		}
-		else if (dewPoint < 16.0f) {
-			return Perception_Comfy;
-		}
-		else if (dewPoint < 18.0f) {
-			return Perception_Ok;
-		}
-		else if (dewPoint < 21.0f) {
-			return Perception_UnComfy;
-		}
-		else if (dewPoint < 24.0f) {
-			return Perception_QuiteUnComfy;
-		}
-		else if (dewPoint < 26.0f) {
-			return Perception_VeryUnComfy;
-		}
-		// else dew >= 26.0
-		return Perception_SevereUncomfy;
+	distance = m_comfort.distanceTooHot(temperature, percentHumidity);
+	if (distance > 0)
+	{
+		//update the comfort descriptor
+		tempComfort += (uint8_t)Comfort_TooHot;
+		//decrease the comfot ratio taking the distance into account
+		ratio -= distance * kTempFactor;
 	}
 
+	distance = m_comfort.distanceTooHumid(temperature, percentHumidity);
+	if (distance > 0)
+	{
+		//update the comfort descriptor
+		tempComfort += (uint8_t)Comfort_TooHumid;
+		//decrease the comfot ratio taking the distance into account
+		ratio -= distance * kHumidFactor;
+	}
+
+	distance = m_comfort.distanceTooCold(temperature, percentHumidity);
+	if (distance > 0)
+	{
+		//update the comfort descriptor
+		tempComfort += (uint8_t)Comfort_TooCold;
+		//decrease the comfot ratio taking the distance into account
+		ratio -= distance * kTempFactor;
+	}
+
+	distance = m_comfort.distanceTooDry(temperature, percentHumidity);
+	if (distance > 0)
+	{
+		//update the comfort descriptor
+		tempComfort += (uint8_t)Comfort_TooDry;
+		//decrease the comfot ratio taking the distance into account
+		ratio -= distance * kHumidFactor;
+	}
+
+	destComfortStatus = (ComfortState)tempComfort;
+
+	if (ratio < 0)
+		ratio = 0;
+
+	return ratio;
+}
+
+
+
+
+ComfortProfile getComfortProfile() { return m_comfort; }
+void setComfortProfile(ComfortProfile& c) { m_comfort = c; }
+inline bool isTooHot(float temp, float humidity) { return m_comfort.isTooHot(temp, humidity); }
+inline bool isTooHumid(float temp, float humidity) { return m_comfort.isTooHumid(temp, humidity); }
+inline bool isTooCold(float temp, float humidity) { return m_comfort.isTooCold(temp, humidity); }
+inline bool isTooDry(float temp, float humidity) { return m_comfort.isTooDry(temp, humidity); }
+
+//boolean isFahrenheit: True == Fahrenheit; False == Celcius
+byte computePerception(float temperature, float percentHumidity, bool isFahrenheit = false) {
+	// Computing human perception from dew point
+	// reference: https://en.wikipedia.org/wiki/Dew_point ==> Relationship to human comfort
+	// reference: Horstmeyer, Steve (2006-08-15). "Relative Humidity....Relative to What? The Dew Point Temperature...a better approach". Steve Horstmeyer, Meteorologist, WKRC TV, Cincinnati, Ohio, USA. Retrieved 2009-08-20.
+	// Using table
+	// Return value Dew point    Human perception[6]
+	//    7         Over 26 °C   Severely high, even deadly for asthma related illnesses
+	//    6         24–26 °C     Extremely uncomfortable, oppressive
+	//    5         21–24 °C     Very humid, quite uncomfortable
+	//    4         18–21 °C     Somewhat uncomfortable for most people at upper edge
+	//    3         16–18 °C     OK for most, but all perceive the humidity at upper edge
+	//    2         13–16 °C     Comfortable
+	//    1         10–12 °C     Very comfortable
+	//    0         Under 10 °C  A bit dry for some
+
+	if (isFahrenheit) {
+		temperature = toCelsius(temperature);
+	}
+	float dewPoint = computeDewPoint(temperature, percentHumidity);
+
+	if (dewPoint < 10.0f) {
+		return Perception_Dry;
+	}
+	else if (dewPoint < 13.0f) {
+		return Perception_VeryComfy;
+	}
+	else if (dewPoint < 16.0f) {
+		return Perception_Comfy;
+	}
+	else if (dewPoint < 18.0f) {
+		return Perception_Ok;
+	}
+	else if (dewPoint < 21.0f) {
+		return Perception_UnComfy;
+	}
+	else if (dewPoint < 24.0f) {
+		return Perception_QuiteUnComfy;
+	}
+	else if (dewPoint < 26.0f) {
+		return Perception_VeryUnComfy;
+}
+	// else dew >= 26.0
+	return Perception_SevereUncomfy;
+	}
 
 
 
@@ -395,8 +395,8 @@ public:
 protected:
 	void readSensor() {
 		// Make sure we don't poll the sensor too often
-		// - Max sample rate DHT11 is 1 Hz   (duty circle 1000 ms)
-		// - Max sample rate DHT22 is 0.5 Hz (duty circle 2000 ms)
+		// - Max sample rate DHT11 is 1 Hz   (duty cicle 1000 ms)
+		// - Max sample rate DHT22 is 0.5 Hz (duty cicle 2000 ms)
 		unsigned long startTime = millis();
 		if ((unsigned long)(startTime - lastReadTime) < (model == DHT11 ? 999L : 1999L)) {
 			return;
@@ -458,7 +458,7 @@ protected:
 				// Now we are being fed our 40 bits
 				data <<= 1;
 
-				// A zero max 30 ?secs, a one at least 68 ?secs.
+				// A zero max 30 usecs, a one at least 68 usecs.
 				if (age > 30) {
 					data |= 1; // we got a one
 				}
@@ -505,7 +505,6 @@ protected:
 
 		error = ERROR_NONE;
 	}
-
 
 	float temperature;
 	float humidity;
